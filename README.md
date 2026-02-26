@@ -62,6 +62,10 @@ The React client uses the dark "Mocha & Matcha" theme: layered coffee browns wit
 
 4. **Collaborate:** open the same `?doc=` link in a second tab or browser and type in both.
 
+## Deploying Online
+
+[DEPLOY.md](DEPLOY.md) walks through putting the editor and Sync Service on Render's free tier, with MongoDB Atlas and Upstash Redis, using the included [`render.yaml`](render.yaml) Blueprint.
+
 ## Testing
 
 With the Sync Service running, run the end-to-end CRDT test. It connects simulated users with the same `y-websocket` client the frontend uses, and checks that concurrent edits converge without loss, that presence reaches other clients, and that a new client receives the persisted document:

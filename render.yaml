@@ -1,0 +1,36 @@
+# Render Blueprint: deploys the sync service and the editor frontend.
+# See DEPLOY.md for the full walkthrough, including the MongoDB Atlas and
+# Upstash Redis setup. Values marked `sync: false` are entered in the Render
+# dashboard and never stored in this file.
+services:
+  - type: web
+    name: collab-sync
+    runtime: node
+    plan: free
+    rootDir: sync-service
+    buildCommand: npm ci --omit=dev
+    startCommand: node server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: MONGO_URI
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      # Set to the editor's URL once it is live, e.g. https://collab-editor.onrender.com
+      - key: ALLOWED_ORIGINS
+        sync: false
+
+  - type: web
+    name: collab-editor
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # The sync service's URL with wss:// and /doc, e.g. wss://collab-sync.onrender.com/doc
+      - key: VITE_SYNC_URL
+        sync: false

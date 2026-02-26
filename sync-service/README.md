@@ -34,9 +34,19 @@ precedence over `.env`.
 
 | Variable            | Default                                                           | Description               |
 | ------------------- | ----------------------------------------------------------------- | ------------------------- |
+| `PORT`              | (unset)                                                           | HTTP/WebSocket port set by hosts like Render; wins over `SYNC_SERVICE_PORT` |
 | `SYNC_SERVICE_PORT` | `3001`                                                            | HTTP/WebSocket port       |
-| `REDIS_URL`         | `redis://redis:6379/0`                                            | Redis for cross-node fan-out |
+| `REDIS_URL`         | `redis://redis:6379/0`                                            | Redis for cross-node fan-out (`rediss://` for TLS) |
 | `MONGO_URI`         | `mongodb://admin:secret@mongodb:27017/crdt_store?authSource=admin` | MongoDB for persistence   |
+| `ALLOWED_ORIGINS`   | (unset: any origin)                                               | Comma-separated web origins allowed to connect, e.g. `https://collab-editor.onrender.com` |
+
+`GET /health` returns `{"status":"ok"}` for hosting health checks. Messages over
+10 MB are rejected.
+
+`ALLOWED_ORIGINS` stops other websites from connecting from a browser; others are
+refused with `403`. Connections with no `Origin` header, such as `test-crdt.js`,
+are still allowed, so it isn't authentication. For deploying, see
+[DEPLOY.md](../DEPLOY.md).
 
 ## Connecting
 

@@ -12,14 +12,39 @@ const encoding = require('lib0/encoding');
 const decoding = require('lib0/decoding');
 const rooms = require('./crdtManager');
 
-const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-
 const REDIS_URL = process.env.REDIS_URL || 'redis://redis:6379/0';
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://admin:secret@mongodb:27017/crdt_store?authSource=admin';
-const PORT = process.env.SYNC_SERVICE_PORT || 3001;
+// Hosting platforms like Render assign the port through PORT
+const PORT = process.env.PORT || process.env.SYNC_SERVICE_PORT || 3001;
 const PING_INTERVAL_MS = 30000;
+const MAX_MESSAGE_BYTES = 10 * 1024 * 1024;
+
+// Comma-separated list of web origins allowed to connect, e.g.
+// "https://collab-editor.onrender.com". Unset means any origin may connect.
+// This stops other websites from using the service from a browser; it is not
+// authentication, since non-browser clients can send any Origin header.
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
+    .split(',')
+    .map(origin => origin.trim().replace(/\/$/, ''))
+    .filter(Boolean);
+
+function isAllowedOrigin(origin) {
+    return ALLOWED_ORIGINS.length === 0 || !origin || ALLOWED_ORIGINS.includes(origin);
+}
+
+const app = express();
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
+
+const server = http.createServer(app);
+const wss = new WebSocket.Server({
+    server,
+    maxPayload: MAX_MESSAGE_BYTES,
+    verifyClient: ({ origin }, done) => {
+        if (isAllowedOrigin(origin)) return done(true);
+        console.warn(`Rejected connection from origin ${origin}`);
+        done(false, 403, 'Origin not allowed');
+    },
+});
 
 // Message types from the y-websocket wire protocol
 const messageSync = 0;
@@ -33,6 +58,11 @@ const REDIS_ORIGIN = Symbol('redis');
 
 const pubClient = createClient({ url: REDIS_URL });
 const subClient = pubClient.duplicate();
+
+// Hosted Redis drops idle connections now and then. The client reconnects on
+// its own, but an 'error' event without a listener would crash the process.
+pubClient.on('error', err => console.error('Redis publisher error:', err.message));
+subClient.on('error', err => console.error('Redis subscriber error:', err.message));
 
 function send(ws, message) {
     if (ws.readyState === WebSocket.OPEN) {
