@@ -1,45 +1,33 @@
 :root {
-  /* A slate-blue blotter under an off-white page, written in blue-black ink */
-  --desk: #a9b7c6;
-  --page: #fdfdfb;
-  --ink: #1f2a37;
-  --graphite: #5f6b78;
-  --rule: #d8dee4;
-  --pen: #2f5bd3;
-  --ok: #2b8a57;
-  --alert: #c4323a;
-  --page-shadow: 0 1px 1px rgb(31 42 55 / 0.12), 0 18px 40px -18px rgb(31 42 55 / 0.45);
+  /* Mocha & Matcha: layered coffee browns with a matcha green accent */
+  --desk: #241811;          /* Dark Mocha: main canvas */
+  --desk-top: #5a3f2c;      /* Warm brown the canvas gradient starts from */
+  --base: #1e140e;          /* Deep Espresso: darkest layer, text on accent */
+  --page: #32231a;          /* Cocoa: the editor surface */
+  --hover: #463327;         /* Milk Chocolate: hover and active states */
+  --ink: #f5efea;           /* Frosted Cream: primary text */
+  --graphite: #a89b92;      /* Warm Taupe: secondary text and icons */
+  --rule: #463327;
+  --pen: #1ed760;           /* Matcha Green: primary action, focus, active */
+  --ok: #1ed760;
+  --alert: #f2766b;
+  --page-shadow: 0 8px 24px rgb(20 10 5 / 0.5);
 
-  --serif: 'Literata', Georgia, 'Times New Roman', serif;
-  --sans: 'Schibsted Grotesk', system-ui, 'Segoe UI', sans-serif;
+  --sans: 'Plus Jakarta Sans', 'Inter', system-ui, 'Segoe UI', sans-serif;
+  --doc-font: var(--sans);
 
-  color-scheme: light;
-  font: 16px/1.5 var(--sans);
+  color-scheme: dark;
+  font: 500 16px/1.5 var(--sans);
   color: var(--ink);
   background: var(--desk);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --desk: #121820;
-    --page: #1e2630;
-    --ink: #e6eaee;
-    --graphite: #9aa5b1;
-    --rule: #34404c;
-    --pen: #8eaaf5;
-    --ok: #4cc38a;
-    --alert: #ff6b6b;
-    --page-shadow: 0 1px 1px rgb(0 0 0 / 0.4), 0 18px 40px -18px rgb(0 0 0 / 0.8);
-
-    color-scheme: dark;
-  }
-}
-
 body {
   margin: 0;
-  background: var(--desk);
+  min-height: 100vh;
+  background: linear-gradient(var(--desk-top), var(--desk) 400px) var(--desk) no-repeat;
 }
 
 :focus-visible {

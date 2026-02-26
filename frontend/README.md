@@ -13,7 +13,7 @@ Yjs (via `y-websocket`) to sync with the sync service.
   offline are kept and sync when the connection returns.
 - **Shareable documents:** the document ID lives in the URL (`?doc=<id>`). Opening
   the app without one starts a new document. **Copy link** copies the URL.
-- **Light and dark themes** that follow the system setting.
+- **Mocha & Matcha theme:** a dark, coffee-toned look with a matcha green accent.
 
 ## Running
 
@@ -49,8 +49,8 @@ Vite reads this at build time, so rebuild after changing it.
 | ----------------- | ------------------------------------------------------------------------------- |
 | `src/App.jsx`     | Reads or creates the `?doc=` ID, renders the header and the share link          |
 | `src/Editor.jsx`  | Connects to the sync service and binds the shared document to Quill             |
-| `src/index.css`   | Color and font tokens, with dark-mode overrides                                 |
-| `src/App.css`     | Layout, the page and ribbon styles, and Quill theme overrides                   |
+| `src/index.css`   | Color and font tokens, and the background gradient                              |
+| `src/App.css`     | Layout, the page, button and ribbon styles, and Quill theme overrides           |
 
 `Editor` creates a `Y.Doc`, a `WebsocketProvider` for the document ID and a Quill
 editor, and connects them with `QuillBinding`. The text is stored in the shared
@@ -62,10 +62,24 @@ down when the component unmounts or the document changes.
 
 ## Design
 
-The document is an off-white page on a slate-blue desk. Content is set in
-[Literata](https://fonts.google.com/specimen/Literata) at a book-width line, and
-the interface uses [Schibsted Grotesk](https://fonts.google.com/specimen/Schibsted+Grotesk).
-Both load from Google Fonts in `index.html` and fall back to Georgia and the
-system font when offline. Colors are CSS variables on `:root` in `src/index.css`;
-change them there rather than in component styles. The only animation (a ribbon
-dropping in when someone joins) is turned off under `prefers-reduced-motion`.
+The app uses the dark **Mocha & Matcha** theme. The editor is a Cocoa page on a
+Dark Mocha canvas that fades down from a warm brown gradient.
+
+| Token        | Name           | Hex       | Used for                                  |
+| ------------ | -------------- | --------- | ----------------------------------------- |
+| `--base`     | Deep Espresso  | `#1E140E` | Darkest layer; text on the green button   |
+| `--desk`     | Dark Mocha     | `#241811` | Page background                           |
+| `--desk-top` | Warm brown     | `#5A3F2C` | Top of the background gradient (400px)    |
+| `--page`     | Cocoa          | `#32231A` | Editor surface                            |
+| `--hover`    | Milk Chocolate | `#463327` | Hover and active states, dividers         |
+| `--pen`      | Matcha Green   | `#1ED760` | Copy link button, focus, active tools, status |
+| `--ink`      | Frosted Cream  | `#F5EFEA` | Primary text                              |
+| `--graphite` | Warm Taupe     | `#A89B92` | Secondary text and icons                  |
+
+Everything is set in [Plus Jakarta Sans](https://fonts.google.com/specimen/Plus+Jakarta+Sans):
+700 for headings and buttons, 500 for interface text, 400 for document text. It
+loads from Google Fonts in `index.html` and falls back to Inter or the system font
+when offline. The tokens are CSS variables on `:root` in `src/index.css`; change
+them there rather than in component styles. The animations (a ribbon dropping in
+when someone joins, and the Copy link button growing slightly on hover) are turned
+off under `prefers-reduced-motion`.

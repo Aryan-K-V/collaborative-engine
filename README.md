@@ -25,13 +25,12 @@ Unlike legacy Operational Transformation (OT) which forces a centralized server 
 
 ## Frontend Editor
 
-The React client presents the document as a manuscript page:
+The React client uses the dark "Mocha & Matcha" theme: layered coffee browns with a matcha green accent.
 
 * **Live co-editing** with each collaborator's cursor and selection shown in their color.
 * **Presence ribbons:** everyone in the document appears as a bookmark ribbon on the page's top edge, in their cursor color; hover or focus a ribbon to see the name.
 * **Connection status** (connecting, syncing, connected, offline). Edits made while offline sync automatically on reconnect.
 * **Shareable documents:** the document ID lives in the URL (`?doc=<id>`). Opening the app without one starts a new document; **Copy link** shares it.
-* Light and dark themes that follow the system setting.
 
 ## Local Deployment Instructions
 
