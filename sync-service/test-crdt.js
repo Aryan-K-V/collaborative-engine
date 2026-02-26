@@ -1,49 +1,60 @@
+// End-to-end check against a running sync service, using the same
+// y-websocket client the frontend uses.
+//   node test-crdt.js [ws://localhost:3001/doc]
 const WebSocket = require('ws');
 const Y = require('yjs');
+const { WebsocketProvider } = require('y-websocket');
 
-// Connect User A and User B to the same document
-const wsA = new WebSocket('ws://localhost:3001/doc/crdt-demo-1');
-const wsB = new WebSocket('ws://localhost:3001/doc/crdt-demo-1');
+const SYNC_URL = process.argv[2] || 'ws://localhost:3001/doc';
+const DOC_ID = `test-${Date.now()}`;
 
-// Initialize local CRDT state for both users
-const docA = new Y.Doc();
-const docB = new Y.Doc();
-const textA = docA.getText('shared-text');
-const textB = docB.getText('shared-text');
+function connect(name) {
+    const ydoc = new Y.Doc();
+    const provider = new WebsocketProvider(SYNC_URL, DOC_ID, ydoc, { WebSocketPolyfill: WebSocket });
+    provider.awareness.setLocalStateField('user', { name });
+    const synced = new Promise(resolve => provider.once('sync', resolve));
+    return { ydoc, provider, text: ydoc.getText('quill'), synced };
+}
 
-// 1. Send local changes to the server
-docA.on('update', update => wsA.send(update));
-docB.on('update', update => wsB.send(update));
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-// 2. Receive and apply remote changes from the server
-wsA.on('message', message => Y.applyUpdate(docA, new Uint8Array(message)));
-wsB.on('message', message => Y.applyUpdate(docB, new Uint8Array(message)));
+function check(label, ok) {
+    console.log(`${ok ? '✅' : '❌'} ${label}`);
+    if (!ok) process.exitCode = 1;
+}
 
-let connections = 0;
-const startTest = () => {
-    connections++;
-    if (connections === 2) {
-        console.log("Both users connected. Firing simultaneous edits...");
-        
-        // Both users type at position 0 at the exact same millisecond
-        textA.insert(0, "User_A_Types_This ");
-        textB.insert(0, "User_B_Types_This ");
+async function main() {
+    const a = connect('A');
+    const b = connect('B');
+    await Promise.all([a.synced, b.synced]);
+    console.log(`Both users synced on ${DOC_ID}. Firing simultaneous edits...`);
 
-        // Wait 1 second for Redis Pub/Sub and MongoDB to process the merge
-        setTimeout(() => {
-            console.log("\n--- CRDT Merge Results ---");
-            console.log("User A sees:", textA.toString());
-            console.log("User B sees:", textB.toString());
-            
-            if (textA.toString() === textB.toString()) {
-                console.log("\n✅ Eventual Consistency Achieved! Conflict resolved without data loss.");
-            } else {
-                console.log("\n❌ Sync failed.");
-            }
-            process.exit(0);
-        }, 1000);
-    }
-};
+    // Both users type at position 0 at the same moment
+    a.text.insert(0, 'User_A_Types_This ');
+    b.text.insert(0, 'User_B_Types_This ');
+    await wait(500);
 
-wsA.on('open', startTest);
-wsB.on('open', startTest);
+    console.log('User A sees:', a.text.toString());
+    console.log('User B sees:', b.text.toString());
+    check('Concurrent edits converge', a.text.toString() === b.text.toString());
+    check('No edits lost', a.text.length === 36);
+
+    const names = [...a.provider.awareness.getStates().values()].map(s => s.user?.name).sort();
+    check('Presence reaches other clients', names.join() === 'A,B');
+
+    // Everyone leaves; the server should persist the doc and serve it to a newcomer
+    const finalText = a.text.toString();
+    a.provider.destroy();
+    b.provider.destroy();
+    await wait(1500);
+
+    const c = connect('C');
+    await c.synced;
+    check('Persisted state is served to a new client', c.text.toString() === finalText);
+    c.provider.destroy();
+}
+
+main().catch(err => {
+    console.error(err);
+    process.exitCode = 1;
+}).finally(() => setTimeout(() => process.exit(), 100));

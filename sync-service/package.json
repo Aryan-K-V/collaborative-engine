@@ -14,9 +14,14 @@
   "dependencies": {
     "dotenv": "^18.0.4",
     "express": "^5.2.1",
+    "lib0": "^0.2.119",
     "mongodb": "^7.6.0",
     "redis": "^6.2.1",
     "ws": "^8.21.3",
+    "y-protocols": "^1.0.7",
     "yjs": "^13.6.33"
+  },
+  "devDependencies": {
+    "y-websocket": "^3.1.0"
   }
 }
