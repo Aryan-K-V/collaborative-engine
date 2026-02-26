@@ -6,11 +6,11 @@ A high-performance, microservices-based backend engine engineered to support rea
 
 The infrastructure isolates relational constraints from high-throughput event streams using an event-driven microservices topology.
 
-* **Core API (FastAPI / Python):** Relational engine managing user authentication, workspace metadata, and strict Role-Based Access Control (RBAC).
+* **Core API (FastAPI / Python):** Relational service for users and document metadata (title, owner). Authentication and access control are not implemented yet; see [core-api/README.md](core-api/README.md).
 * **Sync Service (Node.js / WebSockets):** Stateful real-time service that speaks the standard `y-websocket` protocol. On connect it runs the Yjs sync handshake, so a new client immediately receives the persisted document, then relays document updates and presence (cursors, names) to every client on the same document.
 * **Low-Latency Event Routing (Redis Pub/Sub):** Acts as the message backplane to route binary document updates and presence changes across horizontally scaled Node.js instances, ensuring clients on different physical nodes sync seamlessly. Each node tags its messages and ignores its own echoes.
 * **Hybrid Persistence Layer:** 
-  * **PostgreSQL:** ACID-compliant relational storage for schema-normalized user and document permissions.
+  * **PostgreSQL:** ACID-compliant relational storage for users and document ownership.
   * **MongoDB:** Document store holding each document's binary CRDT state. Writes are throttled to at most one per second while a document is being edited, and flushed when the last client leaves or the service shuts down, for session recovery across restarts.
 
 ##  Technology Stack
