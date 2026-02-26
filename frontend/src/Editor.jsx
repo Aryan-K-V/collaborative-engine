@@ -16,12 +16,13 @@ const STATUS_LABELS = {
     connecting: 'Connecting…',
     syncing: 'Syncing…',
     connected: 'Connected',
-    offline: 'Offline, reconnecting…',
+    offline: 'Offline. Edits sync when you reconnect.',
 };
 
 const pick = list => list[Math.floor(Math.random() * list.length)];
 
 export default function Editor({ docId, syncUrl }) {
+    const toolbarSlotRef = useRef(null);
     const containerRef = useRef(null);
     const [status, setStatus] = useState('connecting');
     const [users, setUsers] = useState([]);
@@ -61,9 +62,8 @@ export default function Editor({ docId, syncUrl }) {
         provider.on('connection-close', onClose);
         awareness.on('change', onPresenceChange);
 
-        // Quill inserts its toolbar as a sibling of the element it's given, so
-        // mount into a child element and clear the whole container on cleanup
         const container = containerRef.current;
+        const toolbarSlot = toolbarSlotRef.current;
         const editorEl = document.createElement('div');
         container.appendChild(editorEl);
 
@@ -73,16 +73,27 @@ export default function Editor({ docId, syncUrl }) {
                 toolbar: [['bold', 'italic', 'underline'], [{ header: 1 }, { header: 2 }]],
                 history: { userOnly: true }
             },
-            placeholder: 'Start typing…',
+            placeholder: 'Start writing. Anyone with the link can edit with you.',
             theme: 'snow'
         });
 
+        // Quill inserts its toolbar next to the editor; move it into the page's
+        // top row so it sits alongside the status and collaborator ribbons
+        toolbarSlot.appendChild(editor.getModule('toolbar').container);
+
         const binding = new QuillBinding(ydoc.getText('quill'), editor, awareness);
 
-        awareness.setLocalStateField('user', {
-            name: `Anonymous ${pick(ANIMALS)}`,
-            color: pick(CURSOR_COLORS)
-        });
+        // Pick a color nobody here is using yet, once we know who is here
+        const claimIdentity = () => {
+            const taken = new Set();
+            awareness.getStates().forEach(state => state.user && taken.add(state.user.color));
+            const free = CURSOR_COLORS.filter(color => !taken.has(color));
+            awareness.setLocalStateField('user', {
+                name: `Anonymous ${pick(ANIMALS)}`,
+                color: pick(free.length > 0 ? free : CURSOR_COLORS)
+            });
+        };
+        provider.once('sync', claimIdentity);
 
         return () => {
             provider.off('status', onStatus);
@@ -93,30 +104,35 @@ export default function Editor({ docId, syncUrl }) {
             provider.destroy();
             ydoc.destroy();
             container.innerHTML = '';
+            toolbarSlot.innerHTML = '';
         };
     }, [docId, syncUrl]);
 
     return (
-        <section className="editor-panel">
-            <div className="editor-bar">
-                <div className={`status status--${status}`} role="status">
+        <article className="page">
+            <div className="page-head">
+                <div ref={toolbarSlotRef} className="toolbar-slot" />
+                <p className={`status status--${status}`} role="status">
                     <span className="status-dot" aria-hidden="true" />
                     {STATUS_LABELS[status]}
-                </div>
-                <ul className="presence" aria-label="People in this document">
+                </p>
+                <ul className="ribbons" aria-label="People in this document">
                     {users.map(user => (
-                        <li key={user.clientId} className="presence-user" title={user.name}>
-                            <span className="presence-avatar" style={{ backgroundColor: user.color }} aria-hidden="true">
-                                {user.name.split(' ').pop()[0]}
-                            </span>
-                            <span className="presence-name">
+                        <li
+                            key={user.clientId}
+                            className={`ribbon${user.isSelf ? ' ribbon--self' : ''}`}
+                            style={{ '--ribbon-color': user.color }}
+                            tabIndex={0}
+                        >
+                            <span className="ribbon-shape" aria-hidden="true" />
+                            <span className="ribbon-name">
                                 {user.name}{user.isSelf && ' (you)'}
                             </span>
                         </li>
                     ))}
                 </ul>
             </div>
-            <div ref={containerRef} className="editor" />
-        </section>
+            <div ref={containerRef} className="page-body" />
+        </article>
     );
 }

@@ -28,19 +28,21 @@ function App() {
         } catch {
             setCopyState('failed');
         }
-        setTimeout(() => setCopyState('idle'), 2000);
+        setTimeout(() => setCopyState('idle'), 2500);
     };
 
     return (
-        <main className="app">
-            <header className="app-header">
-                <h1>Real-Time Collaborative Engine</h1>
-                <div className="doc-meta">
-                    <span className="doc-label">Document</span>
-                    <code>{docId}</code>
+        <main className="desk">
+            <header className="desk-head">
+                <h1 className="product">Real-Time Collaborative Engine</h1>
+                <div className="share">
+                    <span className="doc-name" title="Document ID">{docId}</span>
                     <button type="button" className="button" onClick={copyLink}>
-                        {copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Copy failed' : 'Copy link'}
+                        {copyState === 'copied' ? 'Link copied' : 'Copy link'}
                     </button>
+                    {copyState === 'failed' && (
+                        <span className="share-hint" role="alert">Copy the link from the address bar.</span>
+                    )}
                 </div>
             </header>
 
